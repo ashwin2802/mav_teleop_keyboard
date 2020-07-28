@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format='2'>
+    <name>mav_teleop_keyboard</name>
+    <version>1.0.0</version>
+    <description>Keyboard Control for MAV</description>
+    <maintainer email="ashwins@iitk.ac.in">Ashwin Shenai</maintainer>
+
+    <license>TODO</license>
+
+    <author>Ashwin Shenai</author>
+
+    <buildtool_depend>catkin</buildtool_depend>
+    <buildtool_depend>catkin_simple</buildtool_depend>
+
+    <depend>rospy</depend>
+    <depend>nav_msgs</depend>
+    <depend>geometry_msgs</depend>
+
+</package>
