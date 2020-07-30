@@ -2,7 +2,7 @@
 <package format='2'>
     <name>mav_teleop_keyboard</name>
     <version>1.0.0</version>
-    <description>Keyboard Control for MAV</description>
+    <description>Keyboard Position Control for MAV</description>
     <maintainer email="ashwins@iitk.ac.in">Ashwin Shenai</maintainer>
 
     <license>TODO</license>

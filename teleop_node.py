@@ -5,12 +5,10 @@ import tty
 import termios
 import select
 import sys
-import math
 from geometry_msgs.msg import PoseStamped, Pose, Quaternion
 from nav_msgs.msg import Odometry
 import rospy
 import tf
-
 import threading
 import roslib
 roslib.load_manifest('mav_teleop_keyboard')
@@ -149,7 +147,6 @@ def getKeystroke(timeout):
     else:
         key = ''
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-    # print("Got key:{}".format(key))
     return key
 
 
