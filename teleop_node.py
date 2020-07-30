@@ -6,9 +6,10 @@ import termios
 import select
 import sys
 import math
-from geometry_msgs.msg import PoseStamped, Pose
+from geometry_msgs.msg import PoseStamped, Pose, Quaternion
 from nav_msgs.msg import Odometry
 import rospy
+import tf
 
 import threading
 import roslib
@@ -27,6 +28,9 @@ Move right:         d
 Increase Thrust:        q
 Decrease Thrust:        e
 
+Counterclockwise Yaw:   c
+Clockwise Yaw:          z
+
 Increase speed by 10%:          k
 Decrease speed by 10%:          l
 
@@ -36,12 +40,14 @@ Ctrl-C to quit
 """
 
 keyBindings = {
-    'a': (0, 1, 0),
-    'd': (0, -1, 0),
-    'w': (1, 0, 0),
-    's': (-1, 0, 0),
-    'q': (0, 0, 1),
-    'e': (0, 0, -1),
+    'a': (0, 1, 0, 0),
+    'd': (0, -1, 0, 0),
+    'w': (1, 0, 0, 0),
+    's': (-1, 0, 0, 0),
+    'c': (0, 0, 0, 1),
+    'z': (0, 0, 0, -1),
+    'q': (0, 0, 1, 0),
+    'e': (0, 0, -1, 0),
 }
 
 speedBindings = {
@@ -62,6 +68,7 @@ class PublisherThread(threading.Thread):
         self.x = 0
         self.y = 0
         self.z = 0
+        self.yaw = 0
         self.speed = 1
         self.curr_pose = Pose()
 
@@ -87,18 +94,19 @@ class PublisherThread(threading.Thread):
         if rospy.is_shutdown():
             raise Exception("Shutdown before receiving a connection")
 
-    def update(self, x, y, z, speed):
+    def update(self, x, y, z, yaw, speed):
         self.condition.acquire()
         self.x = x
         self.y = y
         self.z = z
+        self.yaw = yaw
         self.speed = speed
         self.condition.notify()
         self.condition.release()
 
     def stop(self):
         self.done = True
-        self.update(0, 0, 0, 1)
+        self.update(0, 0, 0, 0, 1)
         self.join()
 
     def run(self):
@@ -111,11 +119,22 @@ class PublisherThread(threading.Thread):
             pose_cmd.pose.position.y = self.curr_pose.position.y + self.y * self.speed
             pose_cmd.pose.position.z = self.curr_pose.position.z + self.z * self.speed
 
+            pose_cmd.pose.orientation = self.updateOrientation(
+                self.yaw * self.speed)
+
             self.condition.release()
             self.publisher.publish(pose_cmd)
 
-        pose_cmd.pose.position = self.curr_pose.position
+        pose_cmd.pose = self.curr_pose
         self.publisher.publish(pose_cmd)
+
+    def updateOrientation(self, delta_yaw):
+        curr_q = self.curr_pose.orientation
+        r, p, y = tf.transformations.euler_from_quaternion(
+            [curr_q.x, curr_q.y, curr_q.z, curr_q.w])
+        y = y + delta_yaw
+        upd_q = tf.transformations.quaternion_from_euler(r, p, y)
+        return Quaternion(upd_q[0], upd_q[1], upd_q[2], upd_q[3])
 
 
 def print_speed(speed):
@@ -143,11 +162,12 @@ if __name__ == "__main__":
     x = 0
     y = 0
     z = 0
+    yaw = 0
     speed = 0.5
 
     try:
         publish_thread.wait_for_subscribers()
-        publish_thread.update(x, y, z, speed)
+        publish_thread.update(x, y, z, yaw, speed)
 
         print(init_msg)
         print_speed(speed)
@@ -155,20 +175,21 @@ if __name__ == "__main__":
         while (1):
             key = getKeystroke(1.0)
             if key in keyBindings.keys():
-                x, y, z = keyBindings[key]
+                x, y, z, yaw = keyBindings[key]
             elif key in speedBindings.keys():
                 speed = speed * speedBindings[key]
                 print_speed(speed)
             else:
-                if key == '' and x == 0 and y == 0 and z == 0:
+                if key == '' and x == 0 and y == 0 and z == 0 and yaw == 0:
                     continue
                 x = 0
                 y = 0
                 z = 0
+                yaw = 0
                 if (key == '\x03'):
                     break
 
-            publish_thread.update(x, y, z, speed)
+            publish_thread.update(x, y, z, yaw, speed)
 
     except Exception as e:
         print(e)
