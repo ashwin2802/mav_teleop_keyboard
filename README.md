@@ -23,11 +23,17 @@ cd ~/catkin_ws/src
 git clone git@github.com:ashwin2802/mav_teleop_keyboard
 # use https://github.com/ashwin2802/mav_teleop_keyboard if SSH is not configured
 catkin build  # or use catkin_make inside ~/catkin_ws/src
+source ~/catkin_ws/devel/setup.bash
 ```
 
 Sample launch file provided in `default.launch`.
 
 It uses [RotorS](https://github.com/ethz-asl/rotors_simulator) for simulating the quadrotor and [mav_nonlinear_mpc](https://github.com/ethz-asl/mav_control_rw) for the position controller.
+
+Run the sample launch file after building the package using:
+```
+roslaunch mav_teleop_keyboard default.launch
+```
 
 ## ROS Connections
 
